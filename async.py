@@ -89,7 +89,6 @@ that would constantly interact with the environment and tell it what to do.  Thi
             # the timeout variable exists because apparently, if one worker dies, the other workers
             # won't die with it, unless the timeout is set to some large number.  This is an empirical
             # observation.
-
             self.queue.put(next(rollout_provider), timeout=600.0)
 
 

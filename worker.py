@@ -34,10 +34,13 @@ class FastSaver(tf.train.Saver):
 def run(args, server):
     env = new_env(args)
     if args.alg == 'A3C': 
+	print "using a3c"
         trainer = A3C(env, args)
     elif args.alg == 'Q':
+	print "using q"
         trainer = Q(env, args)
     elif args.alg == 'VPN':
+	print "vpn bro"
         env_off = new_env(args)
         env_off.verbose = 0
         env_off.reset()
@@ -143,6 +146,8 @@ def evaluate(env, network, num_play=3000, eps=0.0):
         last_state = env.reset()
         last_features = network.get_initial_features()
         last_meta = env.meta()
+	rewardT=0
+        episodeStep=0
         while True:
             if eps == 0.0 or np.random.rand() > eps:
                 fetched = network.act(last_state, last_features,
@@ -161,6 +166,10 @@ def evaluate(env, network, num_play=3000, eps=0.0):
             last_state = state
             last_features = features
             last_meta = env.meta()
+
+	    rewardT+=reward
+            episodeStep+=1
+            print "~~~~~~~step ends with reward: ",rewardT," total step: ",episodeStep," with step ", action.argmax()
 
             if terminal:
                 break
@@ -234,7 +243,7 @@ def run_tester(args, server):
             if reward > best_reward:
                 best_reward = reward
                 sv.saver.save(sess, os.path.join(args.log, 'best'))
-                print("Saved to: %s" % os.path.join(args.log, 'best'))
+                print("Saved to: %s" % os.path.join(args.log, 'bealgst'))
                 
             epoch += 1
 
