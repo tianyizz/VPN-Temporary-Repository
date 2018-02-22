@@ -69,7 +69,7 @@ class RolloutMemory(object):
 class VPN(Q):
     def define_network(self, name):
         self.state_off = None
-        self.args.meta_dim = 0 if self.env.meta() is None else len(self.env.meta())
+        self.args.meta_dim = 0 #if self.env.meta() is None else len(self.env.meta())
         m = eval("model." + name)(self.env.observation_space.shape, 
                 self.env.action_space.n, type='vpn', 
                 gamma=self.args.gamma, 
@@ -201,20 +201,20 @@ class VPN(Q):
         if not self.rand_rollouts.is_full():
             env = self.env_off
             state_off = env.reset()
-            meta_off = env.meta()
+            meta_off = None
             print("Generating random rollouts: %d steps" % self.rand_rollouts.max_size)
             while not self.rand_rollouts.is_full():
                 act_idx = np.random.randint(0, env.action_space.n)
                 action = np.zeros(env.action_space.n)
                 action[act_idx] = 1
-                state, reward, terminal, _, time = env.step(action.argmax())
-                self.rand_rollouts.add(state_off, action, reward, time, 
+                state, reward, terminal, _ = env.step(action.argmax())
+                self.rand_rollouts.add(state_off, action, reward, 0, 
                         meta_off, terminal)
                 state_off = state
-                meta_off = env.meta()
+                meta_off = None
                 if terminal:
                     state_off = env.reset()
-                    meta_off = env.meta()
+                    meta_off = None
         return self.rand_rollouts.sample(self.args.t_max)
 
     def extra_fetches(self):

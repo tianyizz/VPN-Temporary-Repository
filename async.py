@@ -89,7 +89,9 @@ that would constantly interact with the environment and tell it what to do.  Thi
             # the timeout variable exists because apparently, if one worker dies, the other workers
             # won't die with it, unless the timeout is set to some large number.  This is an empirical
             # observation.
+            print ("putting experience into the queue")
             self.queue.put(next(rollout_provider), timeout=600.0)
+            print ("finish queueing")
 
 
 def env_runner(env, network, num_local_steps, summary_writer, solver=None):
@@ -100,7 +102,8 @@ runner appends the policy to the queue.
 """
     last_state = env.reset()
     last_features = network.get_initial_features()
-    last_meta = env.meta()
+    #time=0
+    #last_meta = env.meta()
     if solver.use_target_network():
         last_target_features = solver.target_network.get_initial_features()
 
@@ -114,7 +117,7 @@ runner appends the policy to the queue.
             # choose an action from the policy
             if not hasattr(solver, 'epsilon') or solver.epsilon() < np.random.uniform():
                 fetched = network.act(last_state, last_features,
-                        meta=last_meta)
+                        meta=None)
                 if network.type == 'policy':
                     action, value, features = fetched[0], fetched[1], fetched[2:]
                 else:
@@ -127,22 +130,23 @@ runner appends the policy to the queue.
                 action[act_idx] = 1
                 if network.is_recurrent():
                     features = network.update_state(last_state, last_features,
-                            meta=last_meta)
+                            meta=None)
                 else:
                     features = []
 
             # argmax to convert from one-hot
-            state, reward, terminal, info, time = env.step(action.argmax())
+            state, reward, terminal, info= env.step(action.argmax())
+            #time+=1
             if hasattr(env, 'atari'):
                 reward = np.clip(reward, -1, 1)
 
             # collect the experience
             rollout.add(last_state, action, reward, terminal, last_features, 
-                        value = value, time = time, meta=last_meta)
+                        value = value, time = 0, meta=None)
 
             last_state = state
             last_features = features
-            last_meta = env.meta()
+            #last_meta = env.meta()
 
             if info:
                 summary = tf.Summary()
@@ -155,17 +159,17 @@ runner appends the policy to the queue.
                 terminal_end = True
                 last_state = env.reset()
                 last_features = network.get_initial_features()
-                last_meta = env.meta()
+                #last_meta = env.meta()
                 break
 
         if not terminal_end:
             if solver.use_target_network(): 
                 rollout.r = solver.target_network.value(last_state, 
                             last_features,
-                            meta=last_meta)
+                            meta=None)
             else:
                 rollout.r = network.value(last_state, last_features,
-                            meta=last_meta)
+                            meta=None)
 
         # once we have enough experience, yield it, and have the ThreadRunner place it on a queue
         yield rollout
@@ -247,7 +251,7 @@ class AsyncSolver(object):
     
     def define_summary(self):
         tf.summary.scalar("model/lr", self.learning_rate)
-        tf.summary.image("model/state", self.env.tf_visualize(self.local_network.x), max_outputs=10)
+        #tf.summary.image("model/state", self.env.tf_visualize(self.local_network.x), max_outputs=10)
         tf.summary.scalar("gradient/grad_norm", tf.global_norm(self.grads))
         tf.summary.scalar("param/param_norm", tf.global_norm(self.local_network.var_list))
         for grad_var in self.grads_and_vars:

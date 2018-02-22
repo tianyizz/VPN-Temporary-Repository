@@ -39,12 +39,12 @@ def evaluate(env, agent, num_play=3000, eps=0.0):
     for iter in range(0, num_play):
         last_state = env.reset()
         last_features = agent.get_initial_features()
-        last_meta = env.meta()
+        #last_meta = env.meta()
         while True:
             # import pdb; pdb.set_trace()
             if eps == 0.0 or np.random.rand() > eps:
                 fetched = agent.act(last_state, last_features,
-                        meta=last_meta)
+                        meta=None)
                 if agent.type == 'policy':
                     action, features = fetched[0], fetched[2:]
                 else:
@@ -58,7 +58,7 @@ def evaluate(env, agent, num_play=3000, eps=0.0):
             state, reward, terminal, info, _ = env.step(action.argmax())
             last_state = state
             last_features = features
-            last_meta = env.meta()
+            #last_meta = env.meta()
             if terminal:
                 break
 

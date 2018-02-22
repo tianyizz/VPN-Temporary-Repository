@@ -76,6 +76,7 @@ def create_vncatari_env(env_id, client_id, remotes, **_):
     return env
 
 def create_atari_env(env_id, **kwargs):
+    print "creating atarti~~~~~~~~~~~~~~~~~~~~"
     env = gym.make(env_id)
     env = Vectorize(env)
     env = AtariRescale84x84(env)
@@ -159,7 +160,7 @@ class DiagnosticsInfoI(vectorized.Filter):
             self._all_rewards.append(reward)
 
         if done:
-            logger.info('Episode terminating: episode_reward=%s episode_length=%s', self._episode_reward, self._episode_length)
+            logger.info('In diagno~~~Episode terminating: episode_reward=%s episode_length=%s', self._episode_reward, self._episode_length)
             total_time = time.time() - self._episode_time
             to_log["global/episode_reward"] = self._episode_reward
             to_log["global/episode_length"] = self._episode_length
