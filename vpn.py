@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np
+import time
 import tensorflow as tf
 import model  # NOQA
 import util
@@ -195,6 +196,9 @@ class VPN(Q):
         if self.args.meta_dim > 0:
             feed_dict[self.local_network.meta_off] = traj.meta
 
+        print("finished preparing~~~~~~~~~~~~~~~~")
+        time.sleep(5)
+
         return feed_dict
 
     def random_trajectory(self):
@@ -202,11 +206,15 @@ class VPN(Q):
             env = self.env_off
             state_off = env.reset()
             meta_off = None
-            print("Generating random rollouts: %d steps" % self.rand_rollouts.max_size)
+            print("G~~~~~~~~~~~~~~~~~~~~~~~~enerating random rollouts: %d steps" % self.rand_rollouts.max_size)
+            time.sleep(10)
             while not self.rand_rollouts.is_full():
                 act_idx = np.random.randint(0, env.action_space.n)
                 action = np.zeros(env.action_space.n)
                 action[act_idx] = 1
+
+                print("yup, btw {}".format(self.rand_rollouts.max_size))
+
                 state, reward, terminal, _ = env.step(action.argmax())
                 self.rand_rollouts.add(state_off, action, reward, 0, 
                         meta_off, terminal)
@@ -215,6 +223,8 @@ class VPN(Q):
                 if terminal:
                     state_off = env.reset()
                     meta_off = None
+
+            #sleep(10)
         return self.rand_rollouts.sample(self.args.t_max)
 
     def extra_fetches(self):

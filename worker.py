@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import division
 import go_vncdriver
 import tensorflow as tf
 import argparse
@@ -139,7 +140,7 @@ More tensorflow setup for data parallelism
     port += 1
     return cluster
 
-def evaluate(env, network, num_play=3000, eps=0.0):
+def evaluate(env, network, num_play, eps=0.0):
     for iter in range(0, num_play):
         last_state = env.reset()
         last_features = network.get_initial_features()
@@ -173,19 +174,20 @@ def evaluate(env, network, num_play=3000, eps=0.0):
             rewardT+=reward
             episodeStep+=1
 
-            print "finishing step~~~~~~~~~~~~~~~~~~~",i,"~~~~~~~step ends with reward: ",rewardT," total step: ",episodeStep," with step ", action.argmax()
+            #print "finishing step~~~~~~~~~~~~~~~~~~~",i,"~~~~~~~step ends with reward: ",rewardT," total step: ",episodeStep," with step ", action.argmax()
             if terminal:
                 print "Episode ends with reward: ",rewardT," total step: ",episodeStep
-                rewardT=0
+                #rewardT=0
                 episodeStep=0
                 break
+        print "finished playing the for loop"
 
-    return env.reward_mean(num_play)
+    return (rewardT/num_play)
 
 def run_tester(args, server):
     env = new_env(args)
     env.reset()
-    env.max_history = args.eval_num
+    #env.max_history = args.eval_num
     if args.alg == 'A3C': 
         agent = A3C(env, args)
     elif args.alg == 'Q':
@@ -265,7 +267,7 @@ Setting up Tensorflow for data parallel work
 """
 
     parser = argparse.ArgumentParser(description=None)
-    parser.add_argument('-gpu', '--gpu', default=0, type=int, help='Number of GPUs')
+    parser.add_argument('-gpu', '--gpu', default=1, type=int, help='Number of GPUs')
     parser.add_argument('-v', '--verbose', action='count', dest='verbosity', default=0, help='Set verbosity.')
     parser.add_argument('--task', default=0, type=int, help='Task index')
     parser.add_argument('--job-name', default="worker", help='worker or ps')
@@ -280,14 +282,14 @@ Setting up Tensorflow for data parallel work
     parser.add_argument('-a', '--alg', choices=['A3C', 'Q', 'VPN'], default="A3C")
     parser.add_argument('-mo', '--model', type=str, default="LSTM", help="Name of model: [CNN | LSTM]")
     parser.add_argument('--eval-freq', type=int, default=250000, help="Evaluation frequency")
-    parser.add_argument('--eval-num', type=int, default=500, help="Evaluation frequency")
+    parser.add_argument('--eval-num', type=int, default=200, help="Evaluation frequency")
     parser.add_argument('--eval-epoch', type=int, default=0, help="Evaluation epoch")
     parser.add_argument('--seed', type=int, default=0, help="Random seed")
     parser.add_argument('--config', type=str, default="config/collect_deterministic.xml", 
             help="config xml file for environment")
 
     # Hyperparameters
-    parser.add_argument('-n', '--t-max', type=int, default=10, help="Number of unrolling steps")
+    parser.add_argument('-n', '--t-max', type=int, default=200, help="Number of unrolling steps")
     parser.add_argument('-g', '--gamma', type=float, default=0.98, help="Discount factor")
     parser.add_argument('-ld', '--ld', type=float, default=1, help="Lambda for GAE")
     parser.add_argument('-lr', '--lr', type=float, default=1e-4, help="Learning rate")
@@ -313,7 +315,7 @@ Setting up Tensorflow for data parallel work
     # VPN parameters
     parser.add_argument('--prediction-step', type=int, default=3, help="number of prediction steps")
     parser.add_argument('--branch', type=str, default="4,4,4", help="branching factor")
-    parser.add_argument('--buf', type=int, default=10**6, help="num of steps for random buffer")
+    parser.add_argument('--buf', type=int, default=60, help="num of steps for random buffer")
 
     args = parser.parse_args()
     args.f_num = util.parse_to_num(args.f_num)

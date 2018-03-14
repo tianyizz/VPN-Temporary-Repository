@@ -5,7 +5,7 @@ from six.moves import shlex_quote
 import util
 
 parser = argparse.ArgumentParser(description="Run commands")
-parser.add_argument('-gpu', '--gpu', default="", type=str, help='GPU Ids')
+parser.add_argument('-gpu', '--gpu', default="0", type=str, help='GPU Ids')
 parser.add_argument('-w', '--num-workers', type=int, default=16, help="Number of workers")
 parser.add_argument('-ps', '--num-ps', type=int, default=4, help="Number of parameter servers")
 parser.add_argument('-r', '--remotes', default=None,
@@ -28,10 +28,10 @@ parser.add_argument('--config', type=str, default="config/collect_deterministic.
         help="config xml file for environment")
 parser.add_argument('--seed', type=int, default=0, help="Random seed")
 parser.add_argument('--eval-freq', type=int, default=250000, help="Evaluation frequency")
-parser.add_argument('--eval-num', type=int, default=2000, help="Evaluation frequency")
+parser.add_argument('--eval-num', type=int, default=800, help="Evaluation frequency")
 
 # Hyperparameters
-parser.add_argument('-n', '--t-max', type=int, default=10, help="Number of unrolling steps")
+parser.add_argument('-n', '--t-max', type=int, default=200, help="Number of unrolling steps")
 parser.add_argument('-g', '--gamma', type=float, default=0.98, help="Discount factor")
 parser.add_argument('-lr', '--lr', type=float, default=1e-4, help="Learning rate")
 parser.add_argument('--decay', type=float, default=0.95, help="Learning rate")
@@ -55,7 +55,7 @@ parser.add_argument('--eps-eval', type=float, default=0.0, help="Epsilon for eva
 # VPN parameters
 parser.add_argument('--prediction-step', type=int, default=3, help="number of prediction steps")
 parser.add_argument('--branch', type=str, default="4,4,4", help="branching factor")
-parser.add_argument('--buf', type=int, default=10**6, help="num of steps for random buffer")
+parser.add_argument('--buf', type=int, default=60, help="num of steps for random buffer")
 
 def new_cmd(session, name, cmd, mode, logdir, shell):
     if isinstance(cmd, (list, tuple)):
@@ -111,7 +111,7 @@ def create_commands(session, args, shell='bash'):
         assert len(args.remotes) == args.num_workers
     
     cmds_map = []
-    for i in range(args.num_ps):
+    for i in range(args.num_ps+1):
         prefix = ['CUDA_VISIBLE_DEVICES=']
         cmds_map += [new_cmd(session, "ps-%d" % i, prefix + base_cmd + ["--job-name", "ps", 
                     "--task", str(i)], args.mode, args.log, shell)]

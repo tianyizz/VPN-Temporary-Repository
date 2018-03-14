@@ -85,4 +85,7 @@ class A3C(AsyncSolver):
             feed_dict[self.local_network.meta] = batch.meta
         for i in range(len(self.local_network.state_in)):
             feed_dict[self.local_network.state_in[i]] = batch.features[i]
+
+        print("reached the end of the a3c->>>>>>>>>>>>>>>>>>>>>>>>>>")
+        time.sleep(5)
         return feed_dict

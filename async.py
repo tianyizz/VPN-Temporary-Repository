@@ -5,6 +5,8 @@ import tensorflow as tf
 import six.moves.queue as queue
 import threading
 import distutils.version
+import time
+
 
 use_tf12_api = distutils.version.LooseVersion(tf.VERSION) >= distutils.version.LooseVersion('0.12.0')
 logger = logging.getLogger(__name__)
@@ -90,6 +92,11 @@ that would constantly interact with the environment and tell it what to do.  Thi
             # won't die with it, unless the timeout is set to some large number.  This is an empirical
             # observation.
             print ("putting experience into the queue")
+            if self.queue.full():
+                print("q is full!!!!!!!")
+            else:
+              	print("q is full!!!!!!! The solver is {}".format(self.solver.t_max))
+
             self.queue.put(next(rollout_provider), timeout=600.0)
             print ("finish queueing")
 
@@ -114,6 +121,8 @@ runner appends the policy to the queue.
         for _ in range(num_local_steps):
             value = None
             
+            print("in the for loop {}".format(num_local_steps))
+
             # choose an action from the policy
             if not hasattr(solver, 'epsilon') or solver.epsilon() < np.random.uniform():
                 fetched = network.act(last_state, last_features,
@@ -135,11 +144,13 @@ runner appends the policy to the queue.
                     features = []
 
             # argmax to convert from one-hot
+            print("one step!!")
             state, reward, terminal, info= env.step(action.argmax())
             #time+=1
             if hasattr(env, 'atari'):
                 reward = np.clip(reward, -1, 1)
 
+            print("adding experience, terminal status {}".format(terminal))
             # collect the experience
             rollout.add(last_state, action, reward, terminal, last_features, 
                         value = value, time = 0, meta=None)
@@ -161,6 +172,8 @@ runner appends the policy to the queue.
                 last_features = network.get_initial_features()
                 #last_meta = env.meta()
                 break
+        
+        print("finshed for loop")
 
         if not terminal_end:
             if solver.use_target_network(): 
@@ -172,6 +185,7 @@ runner appends the policy to the queue.
                             meta=None)
 
         # once we have enough experience, yield it, and have the ThreadRunner place it on a queue
+        print("yielding rollout~~~~~~~~~~~")
         yield rollout
 
 class AsyncSolver(object):
@@ -292,6 +306,9 @@ process grabs a rollout that's been produced by the thread runner,
 and updates the parameters.  The update is then sent to the parameter
 server.
 """
+        print("---------------------->>>>>>>>>>>>>>>going for process")
+        time.sleep(5)
+
         sess.run(self.sync)  # copy weights from shared to local
         rollout = self.pull_batch_from_queue()
         should_compute_summary = self.task == 0 and self.local_steps % 101 == 0
@@ -299,21 +316,45 @@ server.
         if self.local_steps % self.args.update_freq == 0:
             batch = self.process_rollout(rollout, gamma=self.args.gamma, lambda_=self.ld)
             extra_fetches = self.extra_fetches()
-            if should_compute_summary:
-                fetches = [self.train_op, self.summary_op, self.global_step]
-            else:
-                fetches = [self.train_op, self.global_step]
+
+            fetches = [self.train_op, self.global_step]
+
+            print("-----------------test-----------------WARNING")
+            print(batch.si.shape)
+            time.sleep(15)
 
             feed_dict = self.prepare_input(batch)
+
+            print("input returned->>>>>>>>>>>>>>>>>>>>>>>")
+            print(batch.si.shape)
+
+            print("WARNING FIRST SIZE")
+            print(len(feed_dict))
+            time.sleep(10)
+
             feed_dict[self.learning_rate] = \
-                    self.args.lr * self.args.decay ** (self.last_global_step/float(10**6))
+                    self.args.lr * self.args.decay ** (self.last_global_step/float(60))
+
+            print("ready to run->>>>>>>>>>>>fetches")
+            print(len(extra_fetches+fetches))
+            print(len(feed_dict))
+            time.sleep(10)
+
             fetched = sess.run(extra_fetches + fetches, feed_dict=feed_dict)
+            #PROBLEM
+            print("start running")
+            time.sleep(10)
+
             if should_compute_summary:
                 self.summary_writer.add_summary(tf.Summary.FromString(fetched[-2]), fetched[-1])
                 self.write_extra_summary(rollout=rollout)
                 self.summary_writer.flush()
             self.last_global_step = fetched[-1]
             self.handle_extra_fetches(fetched[:len(extra_fetches)])
+
+        print("Reached the end of the process")
+        time.sleep(5)
+
 
         self.local_steps += 1
         self.post_process(sess)

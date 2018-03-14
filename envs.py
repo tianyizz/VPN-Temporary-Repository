@@ -76,7 +76,7 @@ def create_vncatari_env(env_id, client_id, remotes, **_):
     return env
 
 def create_atari_env(env_id, **kwargs):
-    print "creating atarti~~~~~~~~~~~~~~~~~~~~"
+    print "~~~~~~~~~~~~~~~~~~~~~~~~~creating atarti~~~~~~~~~~~~~~~~~~~~"
     env = gym.make(env_id)
     env = Vectorize(env)
     env = AtariRescale84x84(env)
